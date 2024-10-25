@@ -5,8 +5,12 @@ import '../animations.css';
 import CategoryType from "../types/CategoryType";
 import tkLogo from "../photos/tkLogo.jpg";
 import Swal from "sweetalert2";
+import { useAuth } from "../context/AuthContext";
 
 function Items() {
+
+  const {isAuthenticated,jwtToken} = useAuth();
+  
   const [items, setItems] = useState<ItemType[]>([]); // Initialize state to store items
   const [selectedItem, setSelectedItem] = useState(null);
   const [itemEditing, setItemEditing] = useState<ItemType | null>(null);
@@ -20,9 +24,17 @@ function Items() {
   const [formattedQuantity, setFormattedQuantity] = useState<string>("N/A");
   const [allCategories, setAllCategories] = useState<CategoryType[]>([]); // State for categories
 
+
+  const config = {
+    headers: {
+        Authorization: `Bearer ${jwtToken}`
+    }
+}
+
+
   async function loadCategories() {
     try {
-      const response = await axios.get("http://localhost:9002/categories");
+      const response = await axios.get("http://localhost:9002/categories",config);
       console.log("Categories loaded:", response.data); // Debugging log
       setAllCategories(response.data);
     } catch (error) {
@@ -32,7 +44,7 @@ function Items() {
 
   async function loadItems() {
     try {
-      const response = await axios.get("http://localhost:9002/items");
+      const response = await axios.get("http://localhost:9002/items",config);
       console.log("Items loaded:", response.data); // Debugging log
       setItems(response.data); // Set the fetched data to state
     } catch (error) {
@@ -40,8 +52,10 @@ function Items() {
     }
   }
   useEffect(() => {
+    if(isAuthenticated){
     loadCategories() ,loadItems(); // Call the function to load items
-  }, []); // Empty dependency array means this effect runs once after initial render
+    }
+  }, [isAuthenticated]); // Empty dependency array means this effect runs once after initial render
 
 
   function handleRowClick(item: ItemType): void {
@@ -90,7 +104,7 @@ function Items() {
       };
   
       try {
-          const response = await axios.put(`http://localhost:9002/items/${id}`, data);
+          const response = await axios.put(`http://localhost:9002/items/${id}`, data,config);
           console.log("Item update:", response);
           
           // Success message
@@ -139,7 +153,7 @@ function Items() {
         unit: unit
       }
       try {
-        const response = await axios.post("http://localhost:9002/items", data);
+        const response = await axios.post("http://localhost:9002/items", data,config);
         console.log("Item created:", response);
         loadItems();
         setCategory("Select Category");
@@ -184,7 +198,7 @@ function Items() {
 
     if (result.isConfirmed) {
         try {
-            const response = await axios.delete(`http://localhost:9002/items/${itemId}`);
+            const response = await axios.delete(`http://localhost:9002/items/${itemId}`,config);
             console.log(response);
             loadItems(); // Refresh the list after deletion
             Swal.fire('Deleted!', 'Your item has been deleted.', 'success');
