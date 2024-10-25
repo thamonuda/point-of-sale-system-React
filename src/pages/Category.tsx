@@ -3,17 +3,27 @@ import CategoryType from "../types/CategoryType";
 import axios from "axios";
 import Swal from "sweetalert2";
 import tkLogo from "../photos/tkLogo.jpg";
+import { useAuth } from "../context/AuthContext";
 
 function Category() {
+
+  const {isAuthenticated,jwtToken} = useAuth();
+  
   const [categories, setCategories] = useState<CategoryType[]>([]);
   const [categoryName, setCategoryName] = useState<string>("");
   const [categoryEditing, setCategoryEditing] = useState<CategoryType | null>(null);
   const [cateId, setCateId] = useState<number | undefined>();
 
+  const config = {
+    headers: {
+        Authorization: `Bearer ${jwtToken}`
+    }
+}
+
   // Load categories from the API
   async function loadCategories() {
     try {
-      const response = await axios.get("http://localhost:9002/categories");
+      const response = await axios.get("http://localhost:9002/categories",config);
       console.log("Categories loaded:", response.data); // Debugging log
       setCategories(response.data);
     } catch (error) {
@@ -22,8 +32,10 @@ function Category() {
   }
 
   useEffect(() => {
+    if(isAuthenticated){
     loadCategories();
-  }, []);
+    }
+  }, [isAuthenticated]);
 
   // Set the category to edit
   function handleCategoryClick(category: CategoryType): void {
@@ -50,7 +62,7 @@ function Category() {
     const data = { name: categoryName };
 
     try {
-      const response = await axios.post("http://localhost:9002/categories", data);
+      const response = await axios.post("http://localhost:9002/categories", data,config);
       console.log("Category created:", response); // Debugging log
       loadCategories(); // Reload categories after successful submission
       setCategoryName(""); // Reset the input field
@@ -79,7 +91,7 @@ function Category() {
     const data = { name: categoryName };
 
     try {
-      const response = await axios.put(`http://localhost:9002/categories/${cateId}`, data);
+      const response = await axios.put(`http://localhost:9002/categories/${cateId}`, data,config);
       console.log("Update response:", response); // Debugging log
       loadCategories(); // Reload categories after successful update
       setCategoryEditing(null);

@@ -4,11 +4,13 @@ import StockType from "../types/StockType";
 import ItemType from "../types/ItemType";
 import Swal from "sweetalert2";
 import tkLogo from "../photos/tkLogo.jpg";
+import { useAuth } from "../context/AuthContext";
 
 
 function Stock() {
 
-
+  const {isAuthenticated,jwtToken} = useAuth();
+  
   const [stock, setStock] = useState<StockType[]>([]);
   const [items, setItems] = useState<ItemType[]>([]);
   const [categoryId, setCategoryId] = useState<number>(0);
@@ -19,10 +21,16 @@ function Stock() {
   const [quantity,setQuantity] = useState<number | string>("Select Item");
   const [id, setId] = useState<number | null>();
 
+  const config = {
+    headers: {
+        Authorization: `Bearer ${jwtToken}`
+    }
+}
+
   // Function to load items
   async function loadItems() {
     try {
-      const response = await axios.get("http://localhost:9002/items");
+      const response = await axios.get("http://localhost:9002/items",config);
       console.log("Items loaded:", response.data); // Debugging log
       setItems(response.data); // Set the fetched data to state
     } catch (error) {
@@ -34,7 +42,7 @@ function Stock() {
   // Function to load stock
   async function loadStock() {
     try {
-      const response = await axios.get("http://localhost:9002/stock");
+      const response = await axios.get("http://localhost:9002/stock",config);
       console.log("Stock loaded:", response.data); // Debugging log
       setStock(response.data);
       // Set the fetched data to state
@@ -45,9 +53,11 @@ function Stock() {
 
   // useEffect to load data when the component mounts
   useEffect(() => {
+    if(isAuthenticated){
     loadItems(); // Call loadItems
     loadStock(); // Call loadStock
-  }, []); // Empty dependency array to run once on mount
+    }
+  }, [isAuthenticated]); // Empty dependency array to run once on mount
 
 
 
@@ -85,7 +95,7 @@ function Stock() {
   };
 
   try {
-      const response = await axios.put(`http://localhost:9002/items/${id}`, data);
+      const response = await axios.put(`http://localhost:9002/items/${id}`, data,config);
       console.log("Item update:", response);
       
       // Success message

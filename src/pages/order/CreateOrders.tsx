@@ -7,9 +7,12 @@ import OrdersType from "../../types/OrdersType";
 import tkLogo from "../../photos/tkLogo.jpg";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { useAuth } from "../../context/AuthContext";
 
 
 function createOrders() {
+
+    const {isAuthenticated,jwtToken} = useAuth();
 
     const billRef = useRef<HTMLDivElement>(null);
 
@@ -22,10 +25,15 @@ function createOrders() {
     const [orders, setOrders] = useState<OrdersType[]>([]);
     const [lastOrderId, setLastOrderId] = useState<number>();
     const [itemNames, setItemNames] = useState<string[]>([]);
-    const [price, setPrice] = useState<number[]>([]);
     const [priceOneUnit, setPriceOneUnit] = useState<number[]>([]);
     const [amount, setAmount] = useState<number[]>([]);
     const [totalAmount, setTotalAmount] = useState<number>();
+
+    const config = {
+        headers: {
+            Authorization: `Bearer ${jwtToken}`
+        }
+    }
 
     useEffect(() => {
         const calculatedTotal = amount.reduce((sum, value) => sum + value, 0);
@@ -41,7 +49,7 @@ function createOrders() {
 
     async function loadOrders() {
         try {
-            const response = await axios.get("http://localhost:9002/order");
+            const response = await axios.get("http://localhost:9002/order",config);
             console.log("Orders loaded:", response.data); // Debugging log
             setOrders(response.data);
         } catch (error) {
@@ -51,7 +59,7 @@ function createOrders() {
 
     async function loadCategories() {
         try {
-            const response = await axios.get("http://localhost:9002/categories");
+            const response = await axios.get("http://localhost:9002/categories",config);
             console.log("Categories loaded:", response.data); // Debugging log
             setAllCategories(response.data);
         } catch (error) {
@@ -61,7 +69,7 @@ function createOrders() {
 
     async function loadItems() {
         try {
-            const response = await axios.get("http://localhost:9002/items");
+            const response = await axios.get("http://localhost:9002/items",config);
             console.log("Items loaded:", response.data); // Debugging log
             setItems(response.data); // Set the fetched data to state
         } catch (error) {
@@ -69,9 +77,12 @@ function createOrders() {
         }
     }
     useEffect(() => {
+        if (isAuthenticated) {
         loadCategories(), loadItems(), loadOrders();
+        }
 
-    }, []);
+    }, [isAuthenticated]);
+
     useEffect(() => {
         loadCategories(), loadItems(), loadOrders();
 
@@ -91,7 +102,7 @@ function createOrders() {
             };
 
             // Send the POST request
-            const response = await axios.post("http://localhost:9002/order", orderData);
+            const response = await axios.post("http://localhost:9002/order", orderData,config);
 
             setTotalAmount(0);
             setAmount([]);
@@ -130,8 +141,8 @@ function createOrders() {
 
         // Show confirmation message with an input field for quantity
         Swal.fire({
-            title: 'Editing Item',
-            text: `You are now editing ${item.name}. Please enter the quantity. (Available: ${item.stock.formattedQuantity})`,
+            title: 'Select Item',
+            text: `You are now select ${item.name}. Please enter the quantity. (Available: ${item.stock.formattedQuantity})`,
             icon: 'info',
             input: 'number', // Use input type 'number' for quantity
             inputPlaceholder: 'Enter quantity',
